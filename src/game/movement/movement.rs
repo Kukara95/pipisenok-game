@@ -102,38 +102,24 @@ impl Direction {
 
     pub fn from_actions(actions: HashSet<ControlledAction>) -> Direction {
         if actions.contains(&ControlledAction::MoveUp) && actions.contains(&ControlledAction::MoveRight) {
-            return Direction::UpRight;
+            Direction::UpRight
+        } else if actions.contains(&ControlledAction::MoveDown) && actions.contains(&ControlledAction::MoveLeft) {
+            Direction::DownLeft
+        } else if actions.contains(&ControlledAction::MoveDown) && actions.contains(&ControlledAction::MoveRight) {
+            Direction::DownRight
+        } else if actions.contains(&ControlledAction::MoveUp) && actions.contains(&ControlledAction::MoveLeft) {
+            Direction::UpLeft
+        } else if actions.contains(&ControlledAction::MoveUp) {
+            Direction::Up
+        } else if actions.contains(&ControlledAction::MoveDown) {
+            Direction::Down
+        } else if actions.contains(&ControlledAction::MoveLeft) {
+            Direction::Left
+        } else if actions.contains(&ControlledAction::MoveRight) {
+            Direction::Right
+        } else {
+            Direction::Zero
         }
-
-        if actions.contains(&ControlledAction::MoveDown) && actions.contains(&ControlledAction::MoveLeft) {
-            return Direction::DownLeft;
-        }
-
-        if actions.contains(&ControlledAction::MoveDown) && actions.contains(&ControlledAction::MoveRight) {
-            return Direction::DownRight;
-        }
-
-        if actions.contains(&ControlledAction::MoveUp) && actions.contains(&ControlledAction::MoveLeft) {
-            return Direction::UpLeft;
-        }
-
-        if actions.contains(&ControlledAction::MoveUp) {
-            return Direction::Up;
-        }
-
-        if actions.contains(&ControlledAction::MoveDown) {
-            return Direction::Down;
-        }
-
-        if actions.contains(&ControlledAction::MoveLeft) {
-            return Direction::Left;
-        }
-
-        if actions.contains(&ControlledAction::MoveRight) {
-            return Direction::Right;
-        }
-
-        Direction::Zero
     }
 
     pub fn vec_from_actions(actions: Vec<ControlledAction>) -> Vec3 {

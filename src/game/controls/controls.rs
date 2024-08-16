@@ -30,7 +30,7 @@ pub struct Controls {
 
 #[derive(Resource, Debug, Default, Deref)]
 pub struct Actions {
-    pub current_actions: HashSet<ControlledAction>,
+    pub current_actions: HashSet<Action>,
 }
 
 #[derive(Event, Debug, Eq, PartialEq)]
@@ -82,6 +82,12 @@ impl ActionEvent {
 }
 
 #[derive(Hash, Eq, Debug, Copy, Clone, Default, PartialEq)]
+pub struct Action {
+    pub action: ControlledAction,
+    pub direction: Option<Direction>
+}
+
+#[derive(Hash, Eq, Debug, Copy, Clone, Default, PartialEq)]
 pub enum ControlledAction {
     #[default]
     None,
@@ -94,9 +100,6 @@ pub enum ControlledAction {
 }
 
 impl Actions {
-    pub fn contains_running(&self) -> bool {
-        self.current_actions.contains(&ControlledAction::Run)
-    }
 
     pub fn contains_move(&self) -> bool {
         self.current_actions
@@ -141,6 +144,8 @@ pub fn handle_controls_state(
 ) {
     let pressed_keys: HashSet<KeyCode> = keyboard_input.get_pressed().cloned().collect();
     let released_keys: HashSet<KeyCode> = keyboard_input.get_just_released().cloned().collect();
+
+    let mut direction = Direction::Zero;
 
     let controls = query.single_mut();
     let mut new_actions = HashSet::new();

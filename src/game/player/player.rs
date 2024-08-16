@@ -141,14 +141,8 @@ pub fn load_player_assets(
 
     commands.insert_resource(PlayerAssets {
         assets: vec![
-            PlayerAsset {
-                texture: idle_texture,
-                is_loaded: false,
-            },
-            PlayerAsset {
-                texture: move_texture,
-                is_loaded: false,
-            },
+            PlayerAsset { texture: idle_texture, is_loaded: false },
+            PlayerAsset { texture: move_texture, is_loaded: false },
         ]
     });
     commands.insert_resource(library);
@@ -156,11 +150,7 @@ pub fn load_player_assets(
 
 fn create_atlas(cols: u32, rows: u32) -> TextureAtlasLayout {
     TextureAtlasLayout::from_grid(
-        UVec2::new(RAW_PLAYER_INITIAL_WIDTH, RAW_PLAYER_INITIAL_HEIGHT),
-        cols,
-        rows,
-        None,
-        None,
+        UVec2::new(RAW_PLAYER_INITIAL_WIDTH, RAW_PLAYER_INITIAL_HEIGHT), cols, rows, None, None,
     )
 }
 
@@ -225,63 +215,21 @@ pub fn player_movement(
     mut query: Query<Entity, With<Player>>,
     mut event_reader: EventReader<ActionEvent>,
     mut move_event_writer: EventWriter<MoveEvent>,
-    mut clip_event_writer: EventWriter<ClipChangeEvent>,
 ) {
-    let mut prev_event = None;
     for event in event_reader.read() {
         let player_entity = query.single();
         info!("Get event: {:?}", event);
 
-        if prev_event == Some(event) {
-            return;
-        }
-
-        if event.is_idle() {
-            clip_event_writer.send(ClipChangeEvent::new(&player_entity, AnimationState::Idle, Direction::Zero));
-            prev_event = Some(event);
-            return;
-        }
-
-        if event.is_attack() {
-            let attack_event = ClipChangeEvent::new(&player_entity, AnimationState::Attack, Direction::Zero);
-            let move_event = MoveEvent::new(&player_entity, Direction::Zero, 1.0, PLAYER_SPEED);
-            info!("Sending Move event: {:?} and ClipChange event: {:?}", &move_event, &attack_event);
-
-            move_event_writer.send(move_event);
-            clip_event_writer.send(attack_event);
-            prev_event = Some(event);
-            return;
-        }
-
         if event.contains_move() {
-            let direction = Direction::from_actions(event.actions.clone());
-
-            if event.contains_attack() {
-                let attack_event = ClipChangeEvent::new(&player_entity, AnimationState::Attack, direction);
-                let move_event = MoveEvent::new(&player_entity, direction, 1.0, PLAYER_SPEED);
-                info!("Sending Move event: {:?} and ClipChange event: {:?}", &move_event, &attack_event);
-
-                move_event_writer.send(move_event);
-                clip_event_writer.send(attack_event);
-                prev_event = Some(event);
-                return;
+            let mut acceleration = 1.0;
+            if event.contains_running() {
+                acceleration = 2.0;
             }
 
-            let (animation_state, speed_multiplier) = if event.contains_running() {
-                (AnimationState::Run, 2.0)
-            } else {
-                (AnimationState::Run, 1.0)
-            };
-
-            let clip_event = ClipChangeEvent::new(&player_entity, animation_state, direction);
-            let move_event = MoveEvent::new(&player_entity, direction, speed_multiplier, PLAYER_SPEED);
-
-            info!("Sending Move event: {:?} and ClipChange event: {:?}", &move_event, &clip_event);
-            move_event_writer.send(move_event);
-            clip_event_writer.send(clip_event);
+            let move_action = MoveEvent::new(&player_entity, Direction::from_actions(event.actions.clone()), acceleration, PLAYER_SPEED);
+            info!("Sending Move event: {:?}", &move_action);
+            move_event_writer.send(move_action);
         }
-
-        prev_event = Some(event);
     }
 }
 
