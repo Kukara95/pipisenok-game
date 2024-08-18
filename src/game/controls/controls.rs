@@ -1,11 +1,9 @@
 use std::cmp::PartialEq;
-use std::collections::{HashMap, HashSet};
-use std::ops::Add;
+use std::collections::{HashMap, HashSet, VecDeque};
 
-use bevy::prelude::{in_state, info, App, ButtonInput, Component, Deref, IntoSystemConfigs, KeyCode, Plugin, Query, Res, ResMut, Resource, Update, Event, EventWriter, Entity};
-
-use crate::game::game::GameState;
-use crate::game::movement::movement::{Direction, MoveEndEvent};
+use bevy::input::ButtonInput;
+use bevy::prelude::{App, Event, EventWriter, in_state, IntoSystemConfigs, KeyCode, Plugin, Res, Resource, Update, Vec3, info, Commands, OnEnter};
+use bevy::prelude::KeyCode::{ArrowDown, ArrowLeft, ArrowRight, ArrowUp, KeyA, KeyD, KeyF, KeyS, KeyW, ShiftLeft};
 use crate::AppState;
 
 pub struct ControlsPlugin;
@@ -13,153 +11,78 @@ pub struct ControlsPlugin;
 impl Plugin for ControlsPlugin {
     fn build(&self, app: &mut App) {
         app
-            .init_resource::<Actions>()
-            .add_event::<ActionEvent>()
-            .add_event::<ActionEndEvent>()
-            .add_systems(
-                Update,
-                handle_controls_state.run_if(in_state(GameState::Running)),
-            );
+            .init_resource::<ActionMapping>()
+            .add_event::<ActionCommand>()
+            .add_systems(OnEnter(AppState::Loading), setup_player_controls)
+            .add_systems(Update, handle_input.run_if(in_state(AppState::Game)));
     }
 }
 
-#[derive(Component, Debug)]
-pub struct Controls {
-    pub controls_map: HashMap<KeyCode, ControlledAction>,
-}
-
-#[derive(Resource, Debug, Default, Deref)]
-pub struct Actions {
-    pub current_actions: HashSet<Action>,
-}
-
-#[derive(Event, Debug, Eq, PartialEq)]
-pub struct ActionEvent {
-    pub actions: HashSet<ControlledAction>
-}
-
-#[derive(Event, Debug, Eq, PartialEq)]
-pub struct ActionEndEvent {
-    pub action: ControlledAction
-}
-
-impl ActionEndEvent {
-    pub fn new(action: ControlledAction) -> Self {
-        Self {
-            action
-        }
-    }
-}
-
-impl ActionEvent {
-    pub fn new(actions: HashSet<ControlledAction>) -> Self {
-        Self {
-            actions
-        }
-    }
-
-    pub fn contains_running(&self) -> bool {
-        self.actions.contains(&ControlledAction::Run)
-    }
-
-    pub fn contains_move(&self) -> bool {
-        self.actions
-            .iter()
-            .any(|action| action.is_move_action())
-    }
-
-    pub fn contains_attack(&self) -> bool {
-        self.actions.contains(&ControlledAction::Attack)
-    }
-
-    pub fn is_attack(&self) -> bool {
-        self.actions.iter().all(|it| { it == &ControlledAction::Attack })
-    }
-
-    pub fn is_idle(&self) -> bool {
-        self.actions.iter().all(|it| { it == &ControlledAction::None })
-    }
-}
-
-#[derive(Hash, Eq, Debug, Copy, Clone, Default, PartialEq)]
-pub struct Action {
-    pub action: ControlledAction,
-    pub direction: Option<Direction>
-}
-
-#[derive(Hash, Eq, Debug, Copy, Clone, Default, PartialEq)]
-pub enum ControlledAction {
-    #[default]
-    None,
-    MoveUp,
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum Action {
+    Idle,
     MoveLeft,
-    MoveDown,
     MoveRight,
-    Run,
+    MoveUp,
+    MoveDown,
     Attack,
+    Run,
 }
 
-impl Actions {
-
-    pub fn contains_move(&self) -> bool {
-        self.current_actions
-            .iter()
-            .any(|action| action.is_move_action())
-    }
+#[derive(Event, Debug)]
+pub struct ActionCommand {
+    pub actions: HashSet<Action>,
 }
 
-impl ControlledAction {
-    const MOVE_ACTIONS: [Self; 4] = [
-        ControlledAction::MoveUp,
-        ControlledAction::MoveDown,
-        ControlledAction::MoveLeft,
-        ControlledAction::MoveRight,
-    ];
+#[derive(Resource, Default)]
+pub struct ActionMapping {
+    pub binding: HashMap<KeyCode, Action>,
+}
 
-    pub fn get_direction(&self) -> Direction {
-        match self {
-            ControlledAction::MoveUp => Direction::Up,
-            ControlledAction::MoveLeft => Direction::Left,
-            ControlledAction::MoveDown => Direction::Down,
-            ControlledAction::MoveRight => Direction::Right,
-            ControlledAction::Run => Direction::Zero,
-            ControlledAction::Attack => Direction::Zero,
-            ControlledAction::None => Direction::Zero,
+#[derive(Resource, Default)]
+pub struct CommandQueue {
+    queue: VecDeque<ActionCommand>,
+    is_busy: bool,
+}
+
+pub fn setup_player_controls(mut commands: Commands) {
+    commands.insert_resource(
+        ActionMapping {
+            binding: HashMap::from([
+                (KeyW, Action::MoveUp),
+                (KeyA, Action::MoveLeft),
+                (KeyS, Action::MoveDown),
+                (KeyD, Action::MoveRight),
+                (ArrowUp, Action::MoveUp),
+                (ArrowLeft, Action::MoveLeft),
+                (ArrowDown, Action::MoveDown),
+                (ArrowRight, Action::MoveRight),
+                (ShiftLeft, Action::Run),
+                (KeyF, Action::Attack),
+            ])
         }
-    }
-
-    pub fn is_move_action(&self) -> bool {
-        Self::MOVE_ACTIONS.contains(self)
-    }
-
-    pub fn is_run_action(&self) -> bool {
-        *self == ControlledAction::Run
-    }
+    );
 }
 
-pub fn handle_controls_state(
+pub fn handle_input(
     keyboard_input: Res<ButtonInput<KeyCode>>,
-    mut event_writer: EventWriter<ActionEvent>,
-    mut query: Query<&Controls>,
+    action_mapping: Res<ActionMapping>,
+    mut event_writer: EventWriter<ActionCommand>,
 ) {
-    let pressed_keys: HashSet<KeyCode> = keyboard_input.get_pressed().cloned().collect();
-    let released_keys: HashSet<KeyCode> = keyboard_input.get_just_released().cloned().collect();
+    // we need to collect intersections between pressed keys and keys in the action binding
+    let pressed_actions = keyboard_input
+        .get_pressed()
+        .collect::<HashSet<_>>()
+        .intersection(&action_mapping.binding.keys().collect::<HashSet<_>>())
+        .map(|key| action_mapping.binding[key])
+        .collect::<HashSet<_>>();
 
-    let mut direction = Direction::Zero;
-
-    let controls = query.single_mut();
-    let mut new_actions = HashSet::new();
-
-    if !pressed_keys.is_empty() {
-        for pressed_key in pressed_keys.iter() {
-            if let Some(action) = controls.controls_map.get(pressed_key) {
-                new_actions.insert(*action);
+    if !pressed_actions.is_empty() {
+        info!("Pressed actions: {:?}", pressed_actions);
+        event_writer.send(
+            ActionCommand {
+                actions: pressed_actions
             }
-        }
-
-        info!("Sending actions event: {:?}", &new_actions);
-        event_writer.send(ActionEvent::new(new_actions));
-    } else {
-        event_writer.send(ActionEvent::new(HashSet::from([ControlledAction::None])));
+        );
     }
 }

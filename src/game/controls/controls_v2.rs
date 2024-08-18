@@ -11,18 +11,15 @@ enum Action {
     Run,
 }
 
-// Определяем структуру команды, содержащую список действий
 struct Command {
     actions: Vec<Action>,
 }
 
-// Ресурс для хранения сопоставления клавиш и действий
 #[derive(Resource, Default, Debug)]
 struct ActionMapping {
     map: HashMap<KeyCode, Action>,
 }
 
-// Компонент, представляющий текущую очередь команд
 #[derive(Default)]
 struct CommandQueue {
     queue: VecDeque<Command>,

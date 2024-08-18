@@ -4,12 +4,12 @@ use bevy::prelude::{
     Update,
 };
 
-use crate::animation::animation::PepaAnimationPlugin;
 use crate::game::controls::controls::ControlsPlugin;
 use crate::game::movement::movement::MovementPlugin;
 use crate::game::npc::npc::NpcPlugin;
 use crate::game::player::player::PlayerPlugin;
 use crate::{AppState, WINDOW_HEIGHT, WINDOW_WIDTH};
+use crate::game::player::assets_loading::AssetsLoadingPlugin;
 
 pub struct GamePlugin;
 
@@ -27,6 +27,7 @@ impl Plugin for GamePlugin {
                 PlayerPlugin,
                 MovementPlugin,
                 ControlsPlugin,
+                AssetsLoadingPlugin,
                 //NpcPlugin
             ))
             .add_systems(Startup, spawn_camera)

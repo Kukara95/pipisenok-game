@@ -2,41 +2,41 @@ use std::collections::HashSet;
 use bevy::input::ButtonInput;
 use bevy::math::Vec3;
 use bevy::prelude::{App, Component, info, KeyCode, Plugin, Res};
-use crate::controls::Action;
+use crate::game::controls::controls::Action;
 
 #[derive(Debug, Eq, PartialEq, Hash)]
-pub enum State {
+pub enum StateMachine {
     Move(MoveState),
     Attack(AttackState),
 }
 
-impl State {
+impl StateMachine {
     pub fn idle() -> Self {
-        State::Move(MoveState::Idle)
+        StateMachine::Move(MoveState::Idle)
     }
 
     pub fn walk() -> Self {
-        State::Move(MoveState::Walk)
+        StateMachine::Move(MoveState::Walk)
     }
 
     pub fn run() -> Self {
-        State::Move(MoveState::Run)
+        StateMachine::Move(MoveState::Run)
     }
 
     pub fn attack_idle() -> Self {
-        State::Attack(AttackState::Idle)
+        StateMachine::Attack(AttackState::Idle)
     }
 
     pub fn attack() -> Self {
-        State::Attack(AttackState::Attack)
+        StateMachine::Attack(AttackState::Attack)
     }
 
     pub fn from_move(state: MoveState) -> Self {
-        State::Move(state)
+        StateMachine::Move(state)
     }
 
     pub fn from_attack(state: AttackState) -> Self {
-        State::Attack(state)
+        StateMachine::Attack(state)
     }
 }
 

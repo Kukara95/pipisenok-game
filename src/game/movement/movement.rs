@@ -6,7 +6,7 @@ use bevy_rapier2d::prelude::KinematicCharacterController;
 use rand::{random, Rng};
 
 use crate::AppState;
-use crate::game::controls::controls::{Actions, ControlledAction};
+use crate::game::controls::controls::Action;
 use crate::game::game::GameState;
 
 pub struct MovementPlugin;
@@ -100,58 +100,58 @@ impl Direction {
         Direction::DownLeft
     ];
 
-    pub fn from_actions(actions: HashSet<ControlledAction>) -> Direction {
-        if actions.contains(&ControlledAction::MoveUp) && actions.contains(&ControlledAction::MoveRight) {
+    pub fn from_actions(actions: HashSet<Action>) -> Direction {
+        if actions.contains(&Action::MoveUp) && actions.contains(&Action::MoveRight) {
             Direction::UpRight
-        } else if actions.contains(&ControlledAction::MoveDown) && actions.contains(&ControlledAction::MoveLeft) {
+        } else if actions.contains(&Action::MoveDown) && actions.contains(&Action::MoveLeft) {
             Direction::DownLeft
-        } else if actions.contains(&ControlledAction::MoveDown) && actions.contains(&ControlledAction::MoveRight) {
+        } else if actions.contains(&Action::MoveDown) && actions.contains(&Action::MoveRight) {
             Direction::DownRight
-        } else if actions.contains(&ControlledAction::MoveUp) && actions.contains(&ControlledAction::MoveLeft) {
+        } else if actions.contains(&Action::MoveUp) && actions.contains(&Action::MoveLeft) {
             Direction::UpLeft
-        } else if actions.contains(&ControlledAction::MoveUp) {
+        } else if actions.contains(&Action::MoveUp) {
             Direction::Up
-        } else if actions.contains(&ControlledAction::MoveDown) {
+        } else if actions.contains(&Action::MoveDown) {
             Direction::Down
-        } else if actions.contains(&ControlledAction::MoveLeft) {
+        } else if actions.contains(&Action::MoveLeft) {
             Direction::Left
-        } else if actions.contains(&ControlledAction::MoveRight) {
+        } else if actions.contains(&Action::MoveRight) {
             Direction::Right
         } else {
             Direction::Zero
         }
     }
 
-    pub fn vec_from_actions(actions: Vec<ControlledAction>) -> Vec3 {
-        if actions.contains(&ControlledAction::MoveUp) && actions.contains(&ControlledAction::MoveRight) {
+    pub fn vec_from_actions(actions: Vec<Action>) -> Vec3 {
+        if actions.contains(&Action::MoveUp) && actions.contains(&Action::MoveRight) {
             return Direction::Up.get_direction_vec() + Direction::Right.get_direction_vec();
         }
 
-        if actions.contains(&ControlledAction::MoveDown) && actions.contains(&ControlledAction::MoveLeft) {
+        if actions.contains(&Action::MoveDown) && actions.contains(&Action::MoveLeft) {
             return Direction::Down.get_direction_vec() + Direction::Left.get_direction_vec();
         }
 
-        if actions.contains(&ControlledAction::MoveDown) && actions.contains(&ControlledAction::MoveRight) {
+        if actions.contains(&Action::MoveDown) && actions.contains(&Action::MoveRight) {
             return Direction::Down.get_direction_vec() + Direction::Right.get_direction_vec();
         }
 
-        if actions.contains(&ControlledAction::MoveUp) && actions.contains(&ControlledAction::MoveLeft) {
+        if actions.contains(&Action::MoveUp) && actions.contains(&Action::MoveLeft) {
             return Direction::Up.get_direction_vec() + Direction::Left.get_direction_vec();
         }
 
-        if actions.contains(&ControlledAction::MoveUp) {
+        if actions.contains(&Action::MoveUp) {
             return Direction::Up.get_direction_vec();
         }
 
-        if actions.contains(&ControlledAction::MoveDown) {
+        if actions.contains(&Action::MoveDown) {
             return Direction::Down.get_direction_vec();
         }
 
-        if actions.contains(&ControlledAction::MoveLeft) {
+        if actions.contains(&Action::MoveLeft) {
             return Direction::Left.get_direction_vec();
         }
 
-        if actions.contains(&ControlledAction::MoveRight) {
+        if actions.contains(&Action::MoveRight) {
             return Direction::Right.get_direction_vec();
         }
 
